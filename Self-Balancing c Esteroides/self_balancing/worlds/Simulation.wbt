@@ -1,0 +1,257 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+
+WorldInfo {
+  basicTimeStep 8
+  FPS 30
+}
+Viewpoint {
+  orientation -0.04483901686009876 0.06860573830088611 0.9966356983568321 1.489040202457174
+  position -0.04068252026489041 -0.5810433813334973 0.1675666182753148
+}
+TexturedBackgroundLight {
+}
+Solid {
+  translation 0 -0.0778235 0.183869
+  rotation 0 1 0 0
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          emissiveColor 0.7 0.3 0
+        }
+      }
+      geometry Sphere {
+        radius 0.02
+      }
+    }
+  ]
+  name "Ball"
+  boundingObject Sphere {
+    radius 0.02
+  }
+  physics Physics {
+    density -1
+    mass 0.05
+  }
+}
+RectangleArena {
+  translation 0 0 -0.1
+}
+Background {
+  skyColor [
+    0.15 0.45 1
+  ]
+}
+Robot {
+  translation 0 0.1 0
+  children [
+    DEF base_transform Pose {
+      children [
+        Solid {
+          translation 0 -0.1 0.009968608015378971
+          children [
+            HingeJoint {
+              jointParameters HingeJointParameters {
+                axis 0 1 0
+                anchor 0 -0.05 0.08
+                minStop -3
+                maxStop 3
+                suspensionAxis 0 1 0
+              }
+              device [
+                RotationalMotor {
+                  name "Servo Motor"
+                  acceleration 0.2
+                  maxVelocity 0.5
+                  minPosition -1.5737
+                  maxPosition 1.5737
+                }
+              ]
+              endPoint Solid {
+                translation -0.019999999999999997 -0.10999999999999999 0.07
+                rotation 0 1 0 6.283185307179586
+                children [
+                  SliderJoint {
+                    jointParameters JointParameters {
+                      position -2.140072922429681e-06
+                      staticFriction 1
+                    }
+                    endPoint Solid {
+                      translation 0.02 0.01 0.01
+                      rotation 0 1 0 1.570796326794897
+                      children [
+                        Shape {
+                          appearance Appearance {
+                            material Material {
+                              emissiveColor 0.3 0.3 0.3
+                            }
+                          }
+                          geometry Cylinder {
+                            height 0.28
+                            radius 0.005
+                          }
+                        }
+                      ]
+                      name "Rod 1(1)"
+                      boundingObject Cylinder {
+                        height 0.28
+                        radius 0.005
+                      }
+                    }
+                  }
+                  SliderJoint {
+                    jointParameters JointParameters {
+                      position -2.140072922429681e-06
+                      staticFriction 1
+                    }
+                    endPoint Solid {
+                      translation 0.02 0.05 0.01
+                      rotation 0 1 0 1.570796326794897
+                      children [
+                        SliderJoint {
+                          jointParameters JointParameters {
+                            position 2.2020199654523636e-06
+                            staticFriction 1
+                          }
+                          device [
+                            LinearMotor {
+                            }
+                          ]
+                          endPoint Solid {
+                            translation 0.0100007 -0.05 -0.26000079798003933
+                            rotation 1.6892398782921877e-06 -0.9999999999970652 -1.7366498748763516e-06 1.570785307180381
+                            children [
+                              SliderJoint {
+                                endPoint DistanceSensor {
+                                  translation 0.135 0.03 0.025
+                                  name "ToF Sensor"
+                                  lookupTable [
+                                    0 0 0
+                                    0.25 1000 0
+                                  ]
+                                }
+                              }
+                              Shape {
+                                appearance Appearance {
+                                  material Material {
+                                    emissiveColor 0.3 0.3 0.3
+                                  }
+                                }
+                                geometry Mesh {
+                                  url [
+                                    "../../End Cap w ToF.obj"
+                                  ]
+                                }
+                              }
+                            ]
+                            name "End Cap w/ ToF"
+                            boundingObject Mesh {
+                              url [
+                                "../../End Cap w ToF.obj"
+                              ]
+                            }
+                            physics Physics {
+                            }
+                          }
+                        }
+                        SliderJoint {
+                          jointParameters JointParameters {
+                            position 2.290990525285129e-06
+                            staticFriction 1
+                          }
+                          device [
+                            LinearMotor {
+                            }
+                          ]
+                          endPoint Solid {
+                            translation 0.01 -0.05 0.06000229098926773
+                            rotation -1.4727169721233947e-06 -0.9999999999977988 1.4945069273236812e-06 1.5707853072022433
+                            children [
+                              Shape {
+                                appearance Appearance {
+                                  material Material {
+                                    emissiveColor 0.3 0.3 0.3
+                                  }
+                                }
+                                geometry Mesh {
+                                  url [
+                                    "../../End Cap.obj"
+                                  ]
+                                }
+                              }
+                            ]
+                            name "End Cap"
+                            boundingObject Mesh {
+                              url [
+                                "../../End Cap.obj"
+                              ]
+                            }
+                            physics Physics {
+                            }
+                          }
+                        }
+                        Shape {
+                          appearance Appearance {
+                            material Material {
+                              emissiveColor 0.3 0.3 0.3
+                            }
+                          }
+                          geometry Cylinder {
+                            height 0.28
+                            radius 0.005
+                          }
+                        }
+                      ]
+                      name "Rod 1"
+                      boundingObject Cylinder {
+                        height 0.28
+                        radius 0.005
+                      }
+                    }
+                  }
+                  Shape {
+                    appearance Appearance {
+                      material Material {
+                        emissiveColor 0.3 0.3 0.3
+                      }
+                    }
+                    geometry Mesh {
+                      url [
+                        "../../Motor Stand.obj"
+                      ]
+                    }
+                  }
+                ]
+                name "Motor Stand"
+                boundingObject Mesh {
+                  url [
+                    "../../Motor Stand.obj"
+                  ]
+                }
+              }
+            }
+            Shape {
+              appearance Appearance {
+                material Material {
+                  emissiveColor 0.1 0.1 0.1
+                }
+              }
+              geometry Box {
+                size 0.1 0.1 0.2
+              }
+            }
+          ]
+          name "Tower"
+          physics Physics {
+          }
+        }
+      ]
+    }
+  ]
+  boundingObject DEF base_pose Pose {
+  }
+  controller "self_ballz"
+}
