@@ -14,7 +14,7 @@
 #include <webots/robot.h>
 #include <webots/distance_sensor.h>
 #include <webots/motor.h>
-
+#include <webots/keyboard.h>
 /*
  * You may want to add macros here.
  */
@@ -34,6 +34,9 @@
 int main(int argc, char **argv) {
   /* necessary to initialize webots stuff */
   wb_robot_init();
+  wb_keyboard_enable(1);
+  int key =0;
+  printf("Robot initialized\n");
   /*
    * You should declare here WbDeviceTag variables for storing
    * robot devices like this:
@@ -42,25 +45,27 @@ int main(int argc, char **argv) {
    */
    WbDeviceTag tof = wb_robot_get_device("ToF Sensor");
    wb_distance_sensor_enable(tof, TIME_STEP/2);
-   WbDeviceTag servo = wb_robot_get_device("Servo Motor");
+   WbDeviceTag servo = wb_robot_get_device("ServoMotor");
    
+ 
 
    float x = LENGTH;
    float theta = 90;
-   float xe = (LENGTH / 2) - RADIUS;
+   float xe = (LENGTH / 2) + 0.01;
    float e = 0;
    float e_ = 0;
    float int_e = 0;
    float de_dt = 0;
-   float kp = 1;
-   float ki = 0;
-   float kd = 0;
+   float kp = 30;
+   float ki = 0.01;
+   float kd = 90;
    
    do{x = wb_distance_sensor_get_value(tof);} while(x == 1000);
   /* main loop
    * Perform simulation steps of TIME_STEP milliseconds
    * and leave the loop when the simulation is over
    */
+  printf("Robot controll started\n");
   while (wb_robot_step(TIME_STEP) != -1) {
     /*
      * Read the sensors :
@@ -68,11 +73,34 @@ int main(int argc, char **argv) {
      *  double val = wb_distance_sensor_get_value(my_sensor);
      */
      x = (wb_distance_sensor_get_value(tof) * LENGTH/1000) + RADIUS;
-
+     key = wb_keyboard_get_key();
+     switch (key) {
+       case 'A':
+         kp = 1.1 * kp;
+         break;
+       case 'Z':
+         kp = 0.9 * kp;
+         break;
+       case 'S':
+         ki = 1.1 * ki;
+         break;
+       case 'X':
+         ki = 0.9 * ki;
+         break;
+       case 'D':
+         kd = 1.1 * kd;
+         break;
+       case 'C':
+         kd = 0.9 * kd;
+         break;
+      }
+       
+     
+  
     /* Process sensor data here */
      e = x - xe;
-     int_e += e * TIME_STEP;
-     de_dt = (e - e_) / TIME_STEP;
+     int_e += e /** TIME_STEP*/;
+     de_dt = (e - e_) /*/ TIME_STEP*/;
      e_ = e;
      theta = (kp * e + ki * int_e + kd * de_dt) * PI / 180;
      
@@ -80,6 +108,7 @@ int main(int argc, char **argv) {
      * Enter here functions to send actuator commands, like:
      * wb_motor_set_position(my_actuator, 10.0);
      */
+     printf("X:%.3f\ttheta:%.3f \tkp:%.3f\tki:%.3f\tkd:%.3f\n",x,theta,kp,ki,kd);
      wb_motor_set_position(servo, theta);
   };
   /* Enter your cleanup code here */
