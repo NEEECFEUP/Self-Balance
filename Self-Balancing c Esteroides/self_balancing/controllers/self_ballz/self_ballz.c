@@ -59,6 +59,8 @@ int main(int argc, char **argv) {
    float kp = 30;
    float ki = 0.01;
    float kd = 90;
+   float edge_threshold = 0.05;
+   float edge_failsafe_percent = 0.4;
    
    do{x = wb_distance_sensor_get_value(tof);} while(x == 1000);
   /* main loop
@@ -103,6 +105,11 @@ int main(int argc, char **argv) {
      de_dt = (e - e_) /*/ TIME_STEP*/;
      e_ = e;
      theta = (kp * e + ki * int_e + kd * de_dt) * PI / 180;
+     if(
+       x > LENGTH - RADIUS - edge_threshold
+       ||
+       x < 0 + RADIUS + edge_threshold
+     ) theta = theta * edge_failsafe_percent;
      
     /*
      * Enter here functions to send actuator commands, like:
