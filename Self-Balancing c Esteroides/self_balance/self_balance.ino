@@ -66,10 +66,10 @@ int CRF = 20;  //control rate frequecy
 int URF = 5;   //update rate frequency
 
 float radius = 20;  //raio da bola para fazer a diferença do centro de massa e da deteção do sensor
-float setpoint = 240/*18*/;  //distancia a que deve estar a bola (centro da barra)
-float kp = 2.4/*24*/;
-float ki = 0.06/*0.6*/;
-float kd = 9.8/*98*/;
+float setpoint = 250;  //distancia a que deve estar a bola (centro da barra)
+float kp = 0.50;
+float ki = 0.04;
+float kd = 2.55;
 
 
 int loop_nr = 0;
@@ -79,7 +79,9 @@ rgb_lcd lcd;
 
 int max_change_per_cycle = 40;  //equals to 10 degrees per 50ms
 
-float dist = 0;
+float dist = 500;
+float last_dist = 0;
+float vel = 0;
 float last_error = 0;
 float error = 0;
 float changeError = 0;
@@ -93,9 +95,12 @@ float x1 = 500;
 float x2 = 0;
 float u = 0;
 float error_sim = 0;
-float last_error_Sim = 0;
-float i_error_Sim = 0;
-float d_error_Sim = 0;
+float last_error_sim = 0;
+float i_error_sim = 0;
+float d_error_sim = 0;
+
+float dt = 0.039;
+int sim_cycles = 50;
 
 char message[200];
 // Define os pinos do joystick
@@ -148,7 +153,9 @@ void setup() {
   lcd.blinkLED();
   lcd.clear();
 
-  do{x1 = sensor.getDistance();}while(x1 >= 480); // 480/500 checar um valor util
+//  do{x1 = sensor.getDistance();}while(x1 >= 480); // 480/500 checar um valor util
+  x1 = sensor.getDistance();
+  dist = x1;
 }
 
 
@@ -211,22 +218,27 @@ void loop() {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("kp:");
-    lcd.print((round(inc_kp * 10) * 1.0 / 10));
+    lcd.print((round(inc_kp * 100) * 1.0 / 100));
     lcd.print(" ki:");
-    lcd.print(round(inc_ki * 10) * 1.0 / 10);
+    lcd.print(round(inc_ki * 100) * 1.0 / 100);
     lcd.setCursor(0, 1);
     lcd.print("kd:");
-    lcd.print(round(inc_kd * 10) * 1.0 / 10);
+    lcd.print(round(inc_kd * 100) * 1.0 / 100);
     lcd.print(" D:");
     lcd.print(round(dist) * 1.0 );
   }
 
   loop_nr++;
-
-  pos_motor = PIDcalculation();
+pos_motor=PIDcalculation();
+  /*if(sim_cycles){
+    pos_motor = Sim();  // update Simulation; Simulated 'dist' is 'x1'; Simulated 'pos_motor' is 'u'
+  }
+  else{
+    pos_motor = PIDcalculation();
   // Send servo move command to write 0 degrees to servo ID 0x01
   //sendServoMoveCommand(0x01, pos_motor, 300/CRF);
-  Sim();  // update Simulation; Simulated 'dist' is 'x1'; Simulated 'pos_motor' is 'u'
+    sim_cycles--;
+  }*/
   Serial.print("dist: ");
   Serial.print/*ln*/(dist);
   Serial.print("\tx1: ");
@@ -284,22 +296,26 @@ float PIDcalculation() {
   changeError = error - last_error;                                             // derivative term
   totalError += error;                                                          //accumalate errors to find integral term
   totalError = constrain(totalError,-200,200);
-  pidTerm = (-inc_kp * error) + (-inc_ki * totalError) + (-inc_kd * changeError);  //total gain
+  pidTerm = (inc_kp * error) + (inc_ki * totalError) + (inc_kd * changeError);  //total gain
   //pidTerm = constrain(pidTerm, last_pidTerm - max_change_per_cycle, last_pidTerm + max_change_per_cycle);
-  float y = 390 - pidTerm;//(int)constrain(pidTerm, -500, 500)+1500;  //constraining to appropriate value
+  float y = 630 - pidTerm;//(int)constrain(pidTerm, -500, 500)+1500;  //constraining to appropriate value
   //y = pidTerm;
   last_error = error;
   last_pidTerm = pidTerm;
+  vel = dist - last_dist;
+  last_dist = dist;
   return y;
 }
 
 float Sim(){
-  error_Sim = setpoint - x1;
-  i_error_Sim += error_Sim;
-  i_error_Sim = constrain(i_error_Sim, -200, 200);
-  d_error_Sim = error_Sim - last_error_Sim;
-  last_error_Sim = error_Sim;
-  u = (-inc_kp * error_Sim) + (-inc_ki * i_error_Sim) + (-inc_kd * d_error_Sim);
-  x2 -= 9.80665 * u;
-  x1 += x2;
+  error_sim = setpoint - x1;
+  i_error_sim += error_sim;
+  i_error_sim = constrain(i_error_sim, -200, 200);
+  d_error_sim = error_sim - last_error_sim;
+  last_error_sim = error_sim;
+  u = (inc_kp * error_sim) + (inc_ki * i_error_sim) + (inc_kd * d_error_sim);
+  x2 -= 9.80665 * u * dt;
+  x1 += x2 * dt;
+  float y = 500 - u;
+  return y;
 }
