@@ -6,8 +6,6 @@ self_balance  /  Código do Coutinho para o self balance anterior adaptado por m
 
 self_balancing  /  Simulação do Webots
 
-.obj & .mtl  /  meshes das peças 3d
-
 .f3d  /  ficheiro do Fusion360 das peças 3d
 
 # Self-Balancing 3.0
