@@ -12,35 +12,41 @@ DFRobot_VL53L0X sensor;
 rgb_lcd lcd;
 
 // PID vars
-float setpoint = 250;   // target distance (mm)
+float setpoint = 240;   // target distance (mm)
 
 float kp = 0.55;
 float ki = 0.32;
-float kd = 0.3;
+float kd = 0.4;
 
 const int servo_center = 600;
 
 float error = 0;
 float last_error = 0;
+float last_dist = setpoint;
 float integral = 0;
 
-// Control rate
-int CRF = 500;   //
-unsigned long interval_ms = 1000 / CRF;
+// Update Rate
+int CRF = 100;   // control rate frequecy (Hz)
+const unsigned long interval_ms = 1000 / CRF;
 unsigned long lastMillis = 0;
+unsigned long lastLcdUpdate = 0;
+const unsigned long lcdInterval = 200;   // 5 Hz
 
-const int min_change = 15;
+const int min_change = 2; // Muda o salto minimo em angulo para fazer, tentei diminuir o jitter mas n fez muito, baixei para 2
 static int last_pos = servo_center;
 
 const int pinAnal = A1;  // Pino analógico para o joystick
 const int pinButt = 5;  // Pino butao joystick
+const int pinKi = A0;  // Pino ki
+const int pinRSTKi = 4;  // reset ki
+const int pinKd = A2;  // mesmo para a derivada
+const int pinRSTKd = 6;  
 
 void setup() {
   Serial.begin(115200);
   serial_motors.begin(115200);
 
   Wire.begin();
-
   sensor.begin(0x50);
   sensor.setMode(sensor.eContinuous, sensor.eHigh);
   sensor.start();
@@ -51,6 +57,8 @@ void setup() {
   delay(200);
 
   pinMode(pinButt, INPUT_PULLUP);
+  pinMode(pinRSTKi, INPUT_PULLUP);
+  pinMode(pinRSTKd, INPUT_PULLUP);
 
   lastMillis = millis();
 }
@@ -65,20 +73,43 @@ void loop() {
 
     //joy no stick
     int joyValue = analogRead(pinAnal);
-
     if (joyValue > 550) {
-      setpoint += 1;  // increase target
+      setpoint += 1;  
     }
     else if (joyValue < 470) {
-      setpoint -= 1;  // decrease target
+      setpoint -= 1;  
     }
     setpoint = constrain(setpoint, 50, 500);
-
     if (digitalRead(pinButt) == LOW) {
-      setpoint = 250;
+      setpoint = 240;
+    }
+
+    // controlar Ki
+    joyValue = analogRead(pinKi);
+    if (joyValue > 550) {
+      ki += 0.001;  
+    }
+    else if (joyValue < 470) {
+      ki -= 0.001;  
+    }
+    if (digitalRead(pinRSTKi) == LOW) {
+      ki = 0.32;
+    }
+
+    // controlar kd
+    joyValue = analogRead(pinKd);
+    if (joyValue > 550) {
+      kd += 0.001;  
+    }
+    else if (joyValue < 470) {
+      kd -= 0.001;  
+    }
+    if (digitalRead(pinRSTKd) == LOW) {
+      kd = 0.4;
     }
 
     float dist = sensor.getDistance();
+    // fazer um filtro passa baixo do sinal para tirar jitter
     float alpha = 0.25;   // entre 0 e 1 , menor = mais filter
     static float filtered_dist = 0;
     filtered_dist = alpha * dist + (1 - alpha) * filtered_dist;
@@ -86,16 +117,20 @@ void loop() {
     // PID
     error = setpoint - filtered_dist;
 
+    //integral
     integral += error * dt;
     integral = constrain(integral, -400, 400);
 
-    float derivative = 0;
-    if (dt > 0.00001)
-      derivative = (error - last_error) / dt;
+    // derivada com filtro
+    static float derivative = 0;
+    const float alpha_d = 0.25;
+    float d_raw = -(filtered_dist - last_dist) / dt;
+    derivative = alpha_d * d_raw + (1 - alpha_d) * derivative;
 
     float pid = kp * error + ki * integral + kd * derivative;
 
     last_error = error;
+    last_dist = filtered_dist;
 
     int pos_motor = (int)(servo_center - pid);
     pos_motor = constrain(pos_motor, servo_center - 300, servo_center + 300);
@@ -104,8 +139,7 @@ void loop() {
       last_pos = pos_motor;
     }
 
-    // Serial debug
-    // --- For Serial Plotter ---
+    // Serial debug para o serial plotter do arduino
     Serial.print(0);
     Serial.print(",");
     Serial.print(350);
@@ -119,15 +153,23 @@ void loop() {
     Serial.println(filtered_dist);
 
     // LCD
-    lcd.setCursor(0, 0);
-    lcd.print("Dist:");
-    lcd.print((int)dist);
-    lcd.print("mm   ");
+    if (now - lastLcdUpdate >= lcdInterval) {
+      lastLcdUpdate = now;
 
-    lcd.setCursor(0, 1);
-    lcd.print("Setpoint:");
-    lcd.print((int)setpoint);
-    lcd.print(" ");
+      lcd.setCursor(0, 0);
+      lcd.print("D:");
+      lcd.print((int)filtered_dist);
+      lcd.print(" S:");
+      lcd.print((int)setpoint);
+      lcd.print("   ");              
+
+      lcd.setCursor(0, 1);
+      lcd.print("Ki:");
+      lcd.print(ki, 2);
+      lcd.print(" Kd:");
+      lcd.print(kd, 2);
+      lcd.print(" ");                  
+    }
   }
 
 }
