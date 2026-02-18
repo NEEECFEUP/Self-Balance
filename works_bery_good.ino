@@ -74,12 +74,12 @@ void loop() {
     //joy no stick
     int joyValue = analogRead(pinAnal);
     if (joyValue > 550) {
-      setpoint += 1;  
+      setpoint += 0.1;  
     }
     else if (joyValue < 470) {
-      setpoint -= 1;  
+      setpoint -= 0.1;  
     }
-    setpoint = constrain(setpoint, 50, 500);
+    setpoint = constrain(setpoint, 80, 300);
     if (digitalRead(pinButt) == LOW) {
       setpoint = 240;
     }
@@ -110,7 +110,7 @@ void loop() {
 
     float dist = sensor.getDistance();
     // fazer um filtro passa baixo do sinal para tirar jitter
-    float alpha = 0.25;   // entre 0 e 1 , menor = mais filter
+    float alpha = 0.25;   // entre 0 e 1 , menor = mais filtradinho
     static float filtered_dist = 0;
     filtered_dist = alpha * dist + (1 - alpha) * filtered_dist;
 
@@ -121,7 +121,7 @@ void loop() {
     integral += error * dt;
     integral = constrain(integral, -400, 400);
 
-    // derivada com filtro
+    // derivada com filtro alfa male
     static float derivative = 0;
     const float alpha_d = 0.25;
     float d_raw = -(filtered_dist - last_dist) / dt;
