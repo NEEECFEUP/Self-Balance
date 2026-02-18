@@ -18,7 +18,6 @@ float kp = 0.55;
 float ki = 0.32;
 float kd = 0.3;
 
-float deadzone = 0.0;   // deadzone
 const int servo_center = 600;
 
 float error = 0;
@@ -30,8 +29,11 @@ int CRF = 500;   //
 unsigned long interval_ms = 1000 / CRF;
 unsigned long lastMillis = 0;
 
-const int min_change = 5;
+const int min_change = 15;
 static int last_pos = servo_center;
+
+const int pinAnal = A1;  // Pino analógico para o joystick
+const int pinButt = 5;  // Pino butao joystick
 
 void setup() {
   Serial.begin(115200);
@@ -45,8 +47,10 @@ void setup() {
 
   lcd.begin(16, 2);
   lcd.setCursor(0,0);
-  lcd.print("Init...");
+  lcd.print("Ola...");
   delay(200);
+
+  pinMode(pinButt, INPUT_PULLUP);
 
   lastMillis = millis();
 }
@@ -59,19 +63,28 @@ void loop() {
     float dt = elapsed / 1000.0;
     lastMillis = now;
 
+    //joy no stick
+    int joyValue = analogRead(pinAnal);
+
+    if (joyValue > 550) {
+      setpoint += 1;  // increase target
+    }
+    else if (joyValue < 470) {
+      setpoint -= 1;  // decrease target
+    }
+    setpoint = constrain(setpoint, 50, 500);
+
+    if (digitalRead(pinButt) == LOW) {
+      setpoint = 250;
+    }
+
     float dist = sensor.getDistance();
-    float alpha = 0.5;   // entre 0 e 1 , menor = mais filter
+    float alpha = 0.25;   // entre 0 e 1 , menor = mais filter
     static float filtered_dist = 0;
     filtered_dist = alpha * dist + (1 - alpha) * filtered_dist;
 
     // PID
     error = setpoint - filtered_dist;
-
-    // deadzone
-    if (abs(error) < deadzone) {
-      error = 0;
-      integral = 0; //anti windup
-    }
 
     integral += error * dt;
     integral = constrain(integral, -400, 400);
@@ -92,12 +105,18 @@ void loop() {
     }
 
     // Serial debug
-    Serial.print("Dist: ");
-    Serial.print(dist);
-    Serial.print("  Err: ");
+    // --- For Serial Plotter ---
+    Serial.print(0);
+    Serial.print(",");
+    Serial.print(350);
+    Serial.print(",");
     Serial.print(error);
-    Serial.print("  Servo: ");
-    Serial.println(pos_motor);
+    Serial.print(",");
+    Serial.print(setpoint);
+    Serial.print(",");
+    Serial.print(dist);
+    Serial.print(",");
+    Serial.println(filtered_dist);
 
     // LCD
     lcd.setCursor(0, 0);
@@ -106,8 +125,9 @@ void loop() {
     lcd.print("mm   ");
 
     lcd.setCursor(0, 1);
-    lcd.print("Servo:");
-    lcd.print(pos_motor);
-    lcd.print("   ");
+    lcd.print("Setpoint:");
+    lcd.print((int)setpoint);
+    lcd.print(" ");
   }
+
 }
